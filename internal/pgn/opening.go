@@ -2,25 +2,16 @@ package pgn
 
 import (
 	"bufio"
-	"os"
+	"io"
 	"strings"
 
 	"github.com/ChizhovVadim/counterdev/internal/game"
 	"github.com/ChizhovVadim/counterdev/pkg/common"
 )
 
-// Каждая строка в файле - дебют в SAN формате:
-// 1. e4 e6 2. Qe2
-// 1. e4 e6 2. d3 d5 3. Nd2 Nf6 4. Ngf3
-func LoadOpenings(openingsPath string) ([]game.Game, error) {
-	var file, err = os.Open(openingsPath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
+func LoadOpenings(r io.Reader) ([]game.Game, error) {
 	var res []game.Game
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" || strings.HasPrefix(line, "//") {

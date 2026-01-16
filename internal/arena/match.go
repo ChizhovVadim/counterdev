@@ -3,8 +3,10 @@ package arena
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -64,7 +66,18 @@ func prepareOpenings(
 	openingsPath string,
 	openings chan<- game.Game,
 ) error {
-	data, err := pgn.LoadOpenings(openingsPath)
+	var r io.Reader
+	if openingsPath == "" {
+		r = strings.NewReader(DefaultOpenings)
+	} else {
+		var file, err = os.Open(openingsPath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		r = file
+	}
+	data, err := pgn.LoadOpenings(r)
 	if err != nil {
 		return err
 	}

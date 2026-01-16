@@ -15,7 +15,7 @@ import (
 func matchHandler(args []string) error {
 	var date = time.Now()
 	var (
-		openingsPath   = mapPath("~/chess/openings.txt")
+		openingsPath   = ""
 		outputGamePath = mapPath(fmt.Sprintf("~/chess/games/match-%v.pgn", date.Format("2006-01-02_15_04")))
 		concurrency    = runtime.NumCPU()
 		timeLimit      = common.LimitsType{Nodes: 1_000_000}
