@@ -10,8 +10,35 @@ type ModelMt struct {
 	models []Model
 }
 
-func (m *ModelMt) Train(smaples []Sample) {
-	//TODO
+func NewModelMt(model *Model, concurrency int) *ModelMt {
+	var models = make([]Model, concurrency)
+	for i := range models {
+		models[i] = model.Clone()
+	}
+	return &ModelMt{models: models}
+}
+
+func (m *ModelMt) Train(samples []Sample) {
+	var index int32 = -1
+	var wg = &sync.WaitGroup{}
+	for modelIndex := range m.models {
+		wg.Add(1)
+		go func(m *Model) {
+			defer wg.Done()
+			for {
+				var i = int(atomic.AddInt32(&index, 1))
+				if i >= len(samples) {
+					break
+				}
+				m.trainSample(samples[i])
+			}
+		}(&m.models[modelIndex])
+	}
+	wg.Wait()
+	for i := 1; i < len(m.models); i += 1 {
+		m.models[0].addGradients(&m.models[i])
+	}
+	m.models[0].applyGradients()
 }
 
 func (m *ModelMt) CalculateCost(samples []Sample) float64 {

@@ -29,9 +29,18 @@ func NewModel() *Model {
 	}
 }
 
-func (m *Model) InitWeights(rnd *rand.Rand) {
+func (m *Model) Clone() Model {
+	return Model{
+		layer1: m.layer1.Clone(),
+		layer2: m.layer2.Clone(),
+		cost:   m.cost,
+	}
+}
+
+func (m *Model) InitWeights(rnd *rand.Rand) *Model {
 	m.layer1.InitWeightsReLU(rnd) // ненулевых входных признаков не более 32 (кол во фигур на доске)
 	m.layer2.InitWeightsSigmoid(rnd)
+	return m
 }
 
 func (m *Model) LoadWeights(path string) error {
@@ -86,14 +95,27 @@ func (m *Model) SaveWeights(path string) error {
 	return nil
 }
 
-func (m *Model) Train(smaples []Sample) {
-	for _, sample := range smaples {
-		predicted := m.Forward(sample.Input)
-		m.layer2.outputs[0].Error = m.cost.DerivativeFn(predicted - float64(sample.Target))
-		// back propagation
-		m.layer2.Backward(m.layer1.outputs)
-		m.layer1.BackwardToInput(sample.Input)
+func (m *Model) Train(samples []Sample) {
+	for _, sample := range samples {
+		m.trainSample(sample)
 	}
+	m.applyGradients()
+}
+
+func (m *Model) trainSample(sample Sample) {
+	predicted := m.Forward(sample.Input)
+	m.layer2.outputs[0].Error = m.cost.DerivativeFn(predicted - float64(sample.Target))
+	// back propagation
+	m.layer2.Backward(m.layer1.outputs)
+	m.layer1.BackwardToInput(sample.Input)
+}
+
+func (m *Model) addGradients(src *Model) {
+	m.layer1.addGradients(&src.layer1)
+	m.layer2.addGradients(&src.layer2)
+}
+
+func (m *Model) applyGradients() {
 	m.layer1.ApplyGradients()
 	m.layer2.ApplyGradients()
 }

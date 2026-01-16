@@ -28,8 +28,8 @@ func Train(
 	var training = samples[validationSize:]
 
 	var rnd = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
-	var model = NewModel()
-	model.InitWeights(rnd)
+	var model = NewModelMt(NewModel().InitWeights(rnd), concurrency)
+
 	const BatchSize = 16384
 
 	for epoch := 1; epoch <= epochs; epoch++ {
@@ -57,7 +57,7 @@ func shuffle(rnd *rand.Rand, training []Sample) {
 }
 
 func saveModel(
-	model *Model,
+	model IModel,
 	netFolderPath string,
 	epoch int,
 	validationCost float64,

@@ -33,19 +33,29 @@ func NewLayer(
 	}
 }
 
-func (layer *Layer) InitWeightsSigmoid(rnd *rand.Rand) *Layer {
+// веса общие, нейроны и градиенты раздельные
+func (l *Layer) Clone() Layer {
+	return Layer{
+		activationFn: l.activationFn,
+		outputs:      make([]Neuron, len(l.outputs)),
+		weights:      l.weights,
+		biases:       l.biases,
+		wGradients:   NewGradients(l.wGradients.Rows, l.wGradients.Cols),
+		bGradients:   NewGradients(l.bGradients.Rows, l.bGradients.Cols),
+	}
+}
+
+func (layer *Layer) InitWeightsSigmoid(rnd *rand.Rand) {
 	var outputSize = layer.weights.Rows
 	var inputSize = layer.weights.Cols
 	var variance = 2.0 / float64(inputSize+outputSize)
 	initUniform(rnd, layer.weights.Data, variance)
-	return layer
 }
 
-func (layer *Layer) InitWeightsReLU(rnd *rand.Rand) *Layer {
+func (layer *Layer) InitWeightsReLU(rnd *rand.Rand) {
 	var inputSize = layer.weights.Cols
 	var variance = 2.0 / float64(inputSize)
 	initUniform(rnd, layer.weights.Data, variance)
-	return layer
 }
 
 func (layer *Layer) ForwardFromInput(input Input) {
@@ -111,6 +121,11 @@ func (layer *Layer) BackwardToInput(input2 Input) {
 			layer.wGradients.Add(outputIndex, inputIndex, x*inputValue)
 		}
 	}
+}
+
+func (l *Layer) addGradients(src *Layer) {
+	src.wGradients.AddTo(&l.wGradients)
+	src.bGradients.AddTo(&l.bGradients)
 }
 
 func (layer *Layer) ApplyGradients() {
