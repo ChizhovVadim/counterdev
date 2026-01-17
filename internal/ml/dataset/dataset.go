@@ -2,6 +2,8 @@ package dataset
 
 import (
 	"iter"
+	"log"
+	"path/filepath"
 
 	"github.com/ChizhovVadim/counterdev/internal/game"
 	"github.com/ChizhovVadim/counterdev/internal/pgn"
@@ -14,25 +16,34 @@ type DatasetItem struct {
 }
 
 func LoadDataset(
-	path string,
+	pathPattern string,
 	sigmoidScale float64,
 	searchRatio float64,
 ) iter.Seq2[DatasetItem, error] {
 	return func(yield func(DatasetItem, error) bool) {
-		for gameRaw, err := range pgn.LoadGames(path) {
-			if err != nil {
-				yield(DatasetItem{}, err)
-				return
-			}
-			var g, err = pgn.ParseGame(gameRaw)
-			if err != nil {
-				yield(DatasetItem{}, err)
-				return
-			}
-			var items = AnalyzeGame(&g, sigmoidScale, searchRatio)
-			for i := range items {
-				if !yield(items[i], nil) {
+		matches, err := filepath.Glob(pathPattern)
+		if err != nil {
+			yield(DatasetItem{}, err)
+			return
+		}
+		log.Println("LoadDataset files matched",
+			"size", len(matches))
+		for _, path := range matches {
+			for gameRaw, err := range pgn.LoadGames(path) {
+				if err != nil {
+					yield(DatasetItem{}, err)
 					return
+				}
+				var g, err = pgn.ParseGame(gameRaw)
+				if err != nil {
+					yield(DatasetItem{}, err)
+					return
+				}
+				var items = AnalyzeGame(&g, sigmoidScale, searchRatio)
+				for i := range items {
+					if !yield(items[i], nil) {
+						return
+					}
 				}
 			}
 		}
