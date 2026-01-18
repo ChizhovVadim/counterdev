@@ -18,7 +18,8 @@ func LoadSamples(
 	mirrorPos bool,
 	maxSize int,
 ) ([]model.Sample, error) {
-	var res []model.Sample
+	// сразу задаем capacity, чтобы при переалокации не тратить память на 2 вектора.
+	var res = make([]model.Sample, 0, maxSize) //var res []model.Sample
 	for item, err := range dataset {
 		if err != nil {
 			return nil, err
@@ -28,6 +29,9 @@ func LoadSamples(
 			Input:  input,
 			Target: float32(item.Target),
 		})
+		if len(res) >= maxSize {
+			break
+		}
 		if mirrorPos {
 			var mirrorPos = common.MirrorPosition(&item.Position)
 			var mirrorInput = featureProvider.ComputeFeatures(&mirrorPos)
@@ -36,9 +40,9 @@ func LoadSamples(
 				Input:  mirrorInput,
 				Target: float32(mirrorTarget),
 			})
-		}
-		if len(res) >= maxSize {
-			break
+			if len(res) >= maxSize {
+				break
+			}
 		}
 	}
 	return res, nil
