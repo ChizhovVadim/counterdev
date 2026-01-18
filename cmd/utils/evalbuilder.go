@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/ChizhovVadim/counterdev/internal/evalmaterial"
 	"github.com/ChizhovVadim/counterdev/internal/evalweiss"
@@ -11,43 +12,44 @@ import (
 	"github.com/ChizhovVadim/counterdev/pkg/evalnn"
 )
 
+var networkWeightsCounter55 = weightsLoader("~/chess/n-30-5268.nn", true)
+var networkWeightsExp2 = weightsLoader("~/chess/net/2026-01-09_03_55/n-10-1052.nn", false)
+
 func buildEvaluator(key string) common.IEvaluator {
-	if key == "weiss" {
-		return evalweiss.NewEvaluationService()
-	}
 	if key == "material" {
 		return evalmaterial.NewEvaluationService()
 	}
-	if key == "" || key == "nnue" {
-		var fn = mapPath("~/chess/n-30-5268.nn")
-		var eval, err = buildEvalNN2(fn, true, 1)
-		if err != nil {
-			panic(err)
-		}
-		return eval
+	if key == "" || key == "weiss" {
+		return evalweiss.NewEvaluationService()
+	}
+	if key == "nnue" {
+		return evalnn.NewEvaluationService(networkWeightsCounter55(), 1)
 	}
 	if key == "nnue2" {
-		var fn = mapPath("~/chess/net/2026-01-09_03_55/n-10-1052.nn")
-		var eval, err = buildEvalNN2(fn, false, 146)
-		if err != nil {
-			panic(err)
-		}
-		return eval
+		return evalnn.NewEvaluationService(networkWeightsExp2(), 146)
 	}
 	panic(fmt.Errorf("bad eval key %v", key))
 }
 
-func buildEvalNN2(path string, oldFormat bool, scale float32) (*evalnn.EvaluationService, error) {
-	// TODO кешировать веса
-	var f, err = os.Open(path)
-	if err != nil {
-		return nil, err
+func weightsLoader(path string, oldFormat bool) func() *evalnn.Weights {
+	var (
+		once    sync.Once
+		weights *evalnn.Weights
+	)
+	return func() *evalnn.Weights {
+		once.Do(func() {
+			path = mapPath(path)
+			var f, err = os.Open(path)
+			if err != nil {
+				panic(err)
+			}
+			defer f.Close()
+			weights, err = evalnn.LoadWeights(f, oldFormat)
+			if err != nil {
+				panic(err)
+			}
+			log.Println("Loaded nnue weights", "path", path)
+		})
+		return weights
 	}
-	defer f.Close()
-	weights, err := evalnn.LoadWeights(f, oldFormat)
-	if err != nil {
-		return nil, err
-	}
-	log.Println("Loaded nnue weights", "path", path)
-	return evalnn.NewEvaluationService(weights, scale), nil
 }
