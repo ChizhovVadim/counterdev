@@ -19,12 +19,11 @@ type Layer struct {
 
 func NewLayer(
 	inputSize int,
-	outputs []Neuron,
+	outputSize int,
 	activationFn IFunc,
 ) Layer {
-	var outputSize = len(outputs)
 	return Layer{
-		outputs:      outputs,
+		outputs:      make([]Neuron, outputSize),
 		activationFn: activationFn,
 		weights:      NewMatrix(outputSize, inputSize),
 		biases:       NewMatrix(outputSize, 1),
@@ -92,16 +91,12 @@ func (layer *Layer) Backward(input1 []Neuron) {
 	for outputIndex := range layer.outputs {
 		var n = &layer.outputs[outputIndex]
 		var x = n.Error * n.Prime
+
 		for inputIndex := range input1 {
 			input1[inputIndex].Error += layer.weights.Get(outputIndex, inputIndex) * x
 		}
-	}
 
-	for outputIndex := range layer.outputs {
-		var n = &layer.outputs[outputIndex]
-		var x = n.Error * n.Prime
 		layer.bGradients.Add(outputIndex, 0, x*1)
-
 		for inputIndex := range input1 {
 			var inputValue = input1[inputIndex].Activation
 			layer.wGradients.Add(outputIndex, inputIndex, x*inputValue)

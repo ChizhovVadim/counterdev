@@ -11,21 +11,24 @@ import (
 type Model struct {
 	layer1 Layer
 	layer2 Layer
-	cost   SquareFn
+	cost   IFunc
 }
 
 func NewModel() *Model {
-	var inputSize = 768
-	var hiddenSize = 512
+	var (
+		inputSize  = 768
+		hiddenSize = 512
+	)
 	return &Model{
 		layer1: NewLayer(
 			inputSize,
-			make([]Neuron, hiddenSize),
+			hiddenSize,
 			&ReLuFn{}),
 		layer2: NewLayer(
 			hiddenSize,
-			make([]Neuron, 1),
+			1,
 			&SigmoidFn{}),
+		cost: &SquareFn{},
 	}
 }
 
