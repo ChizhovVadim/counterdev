@@ -2,8 +2,6 @@ package dataset
 
 import (
 	"iter"
-	"log"
-	"path/filepath"
 
 	"github.com/ChizhovVadim/counterdev/internal/game"
 	"github.com/ChizhovVadim/counterdev/internal/pgn"
@@ -16,19 +14,12 @@ type DatasetItem struct {
 }
 
 func LoadDataset(
-	pathPattern string,
+	fileNames []string,
 	sigmoidScale float64,
 	searchRatio float64,
 ) iter.Seq2[DatasetItem, error] {
 	return func(yield func(DatasetItem, error) bool) {
-		matches, err := filepath.Glob(pathPattern)
-		if err != nil {
-			yield(DatasetItem{}, err)
-			return
-		}
-		log.Println("LoadDataset files matched",
-			"size", len(matches))
-		for _, path := range matches {
+		for _, path := range fileNames {
 			for gameRaw, err := range pgn.LoadGames(path) {
 				if err != nil {
 					yield(DatasetItem{}, err)

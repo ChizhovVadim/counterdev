@@ -7,6 +7,14 @@ import (
 	"strings"
 )
 
+func findFiles(pattern string) []string {
+	var matches, err = filepath.Glob(pattern)
+	if err != nil {
+		panic(err)
+	}
+	return matches
+}
+
 func mapPath(path string) string {
 	if strings.HasPrefix(path, "~/") {
 		curUser, err := user.Current()

@@ -40,7 +40,8 @@ func (m *Model) Clone() Model {
 	}
 }
 
-func (m *Model) InitWeights(rnd *rand.Rand) *Model {
+func (m *Model) InitWeights() *Model {
+	var rnd = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
 	m.layer1.InitWeightsReLU(rnd) // ненулевых входных признаков не более 32 (кол во фигур на доске)
 	m.layer2.InitWeightsSigmoid(rnd)
 	return m

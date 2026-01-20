@@ -6,34 +6,43 @@ import (
 	"math/rand/v2"
 	"os"
 	"path/filepath"
-	"time"
+	"runtime"
 )
 
 func Train(
 	samples []Sample,
 	epochs int,
-	concurrency int,
 	netFolderPath string,
 ) error {
-	log.Println("Train started")
-	defer log.Println("Train finished")
-
-	netFolderPath, err := createOutputFolder(netFolderPath)
-	if err != nil {
-		return err
-	}
 
 	var validationSize = len(samples) / 20
 	var validation = samples[:validationSize]
 	var training = samples[validationSize:]
 
-	var rnd = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
-	var model = NewModelMt(NewModel().InitWeights(rnd), concurrency)
+	var concurrency = runtime.GOMAXPROCS(0)
+	var model = NewModelMt(NewModel().InitWeights(), concurrency)
+
+	return trainCycle(model, validation, training, epochs, netFolderPath)
+}
+
+func trainCycle(
+	model IModel,
+	validation, training []Sample,
+	epochs int,
+	netFolderPath string,
+) error {
+	log.Println("Train started")
+	defer log.Println("Train finished")
+
+	err := os.MkdirAll(netFolderPath, os.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	const BatchSize = 16384
 
 	for epoch := 1; epoch <= epochs; epoch++ {
-		shuffle(rnd, training)
+		shuffle(training)
 		for i := 0; i+BatchSize <= len(training); i += BatchSize {
 			var batch = training[i : i+BatchSize]
 			model.Train(batch)
@@ -50,8 +59,8 @@ func Train(
 	return nil
 }
 
-func shuffle(rnd *rand.Rand, training []Sample) {
-	rnd.Shuffle(len(training), func(i, j int) {
+func shuffle(training []Sample) {
+	rand.Shuffle(len(training), func(i, j int) {
 		training[i], training[j] = training[j], training[i]
 	})
 }
@@ -68,13 +77,4 @@ func saveModel(
 	var valCostInt = int(100_000 * validationCost)
 	var filename = filepath.Join(netFolderPath, fmt.Sprintf("n-%2d-%v.nn", epoch, valCostInt))
 	return model.SaveWeights(filename)
-}
-
-func createOutputFolder(baseFolder string) (string, error) {
-	var res = filepath.Join(baseFolder, time.Now().Format("2006-01-02_15_04"))
-	err := os.MkdirAll(res, os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-	return res, nil
 }

@@ -22,8 +22,8 @@ func qualityHandler(args []string) error {
 	flagset.Float64Var(&searchRatio, "searchratio", searchRatio, "")
 	flagset.Parse(args)
 
-	//var data = dataset.LoadValidationDataset(mapPath("~/chess/tuner/quiet-labeled.epd"))
-	var data = dataset.LoadDataset(mapPath("~/chess/dataset/arena-2026-01-03_16_32.pgn"), sigmoidScale, searchRatio)
+	var data = dataset.LoadValidationDataset(mapPath("~/chess/tuner/quiet-labeled.epd"))
+	//var data = dataset.LoadDataset(mapPath("~/chess/dataset/arena-2026-01-03_16_32.pgn"), sigmoidScale, searchRatio)
 	var pureEvaluator = buildEvaluator(eval)
 	var evaluator, ok = pureEvaluator.(dataset.IProbEvaluator)
 	if !ok {
