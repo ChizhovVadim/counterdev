@@ -14,12 +14,16 @@ const (
 const MaxHeight = 128
 
 type EvaluationService struct {
-	weights       *Weights
-	scale         float32
-	updates       Updates
-	hiddenOutputs [MaxHeight][HiddenSize]float32
-	currentHidden int
-	hiddenRelu    [HiddenSize]float32
+	weights            *Weights
+	scale              float32
+	accumulators       [MaxHeight]Accumulator
+	currentAccumulator int
+	updates            Updates
+	hiddenActivation   [HiddenSize]float32
+}
+
+type Accumulator struct {
+	hiddenOutputs [HiddenSize]float32
 }
 
 type Updates struct {
@@ -52,13 +56,13 @@ func (e *EvaluationService) Init(p *common.Position) {
 		}
 	}
 
-	e.currentHidden = 0
-	hiddenOutputs := e.hiddenOutputs[e.currentHidden][:]
+	e.currentAccumulator = 0
+	var acc = &e.accumulators[e.currentAccumulator]
 
+	hiddenOutputs := acc.hiddenOutputs[:]
 	for i := range hiddenOutputs {
 		hiddenOutputs[i] = e.weights.hiddenBiases[i]
 	}
-
 	for _, i := range input {
 		for j := range hiddenOutputs {
 			hiddenOutputs[j] += e.weights.hiddenWeights[i*HiddenSize+j]
@@ -69,9 +73,9 @@ func (e *EvaluationService) Init(p *common.Position) {
 func (e *EvaluationService) MakeMove(p *common.Position, m common.Move) {
 	calculateUpdates(p, m, &e.updates)
 
-	e.currentHidden += 1
-	var hiddenOutputs = e.hiddenOutputs[e.currentHidden][:]
-	copy(hiddenOutputs, e.hiddenOutputs[e.currentHidden-1][:])
+	e.currentAccumulator += 1
+	var hiddenOutputs = e.accumulators[e.currentAccumulator].hiddenOutputs[:]
+	copy(hiddenOutputs, e.accumulators[e.currentAccumulator-1].hiddenOutputs[:])
 
 	for i := range e.updates.Size {
 		var index = int(e.updates.Indices[i]) * HiddenSize
@@ -84,7 +88,7 @@ func (e *EvaluationService) MakeMove(p *common.Position, m common.Move) {
 }
 
 func (e *EvaluationService) UnmakeMove() {
-	e.currentHidden -= 1
+	e.currentAccumulator -= 1
 }
 
 func (e *EvaluationService) EvaluateQuick(p *common.Position) int {
@@ -109,8 +113,8 @@ func (e *EvaluationService) EvaluateProb(p *common.Position) float64 {
 }
 
 func (e *EvaluationService) quickFeed() float32 {
-	reluNEON(e.hiddenRelu[:], e.hiddenOutputs[e.currentHidden][:])
-	return dotProductNEON(e.hiddenRelu[:], e.weights.outputWeights[:]) + e.weights.outputBias
+	reluNEON(e.hiddenActivation[:], e.accumulators[e.currentAccumulator].hiddenOutputs[:])
+	return dotProductNEON(e.hiddenActivation[:], e.weights.outputWeights[:]) + e.weights.outputBias
 }
 
 func calculateNetInputIndex(whiteSide bool, pieceType, square int) int16 {
