@@ -12,10 +12,10 @@ const (
 )
 
 type Weights struct {
-	HiddenWeights [InputSize * HiddenSize]float32
-	HiddenBiases  [HiddenSize]float32
-	OutputWeights [HiddenSize]float32
-	OutputBias    float32
+	hiddenWeights [InputSize * HiddenSize]float32
+	hiddenBiases  [HiddenSize]float32
+	outputWeights [HiddenSize]float32
+	outputBias    float32
 }
 
 func LoadWeights(f io.Reader, oldFormat bool) (*Weights, error) {
@@ -29,13 +29,13 @@ func LoadWeights(f io.Reader, oldFormat bool) (*Weights, error) {
 		}
 	}
 
-	if err := readSlice(f, w.HiddenWeights[:]); err != nil {
+	if err := readSlice(f, w.hiddenWeights[:]); err != nil {
 		return nil, err
 	}
-	if err := readSlice(f, w.HiddenBiases[:]); err != nil {
+	if err := readSlice(f, w.hiddenBiases[:]); err != nil {
 		return nil, err
 	}
-	if err := readSlice(f, w.OutputWeights[:]); err != nil {
+	if err := readSlice(f, w.outputWeights[:]); err != nil {
 		return nil, err
 	}
 
@@ -44,7 +44,7 @@ func LoadWeights(f io.Reader, oldFormat bool) (*Weights, error) {
 	if err != nil {
 		return nil, err
 	}
-	w.OutputBias = math.Float32frombits(binary.LittleEndian.Uint32(buf))
+	w.outputBias = math.Float32frombits(binary.LittleEndian.Uint32(buf))
 
 	return w, nil
 }

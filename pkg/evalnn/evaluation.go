@@ -14,7 +14,7 @@ const (
 const MaxHeight = 128
 
 type EvaluationService struct {
-	*Weights
+	weights       *Weights
 	scale         float32
 	updates       Updates
 	hiddenOutputs [MaxHeight][HiddenSize]float32
@@ -36,7 +36,7 @@ func (u *Updates) Add(index int16, coeff int8) {
 
 func NewEvaluationService(weights *Weights, scale float32) *EvaluationService {
 	return &EvaluationService{
-		Weights: weights,
+		weights: weights,
 		scale:   scale,
 	}
 }
@@ -56,68 +56,31 @@ func (e *EvaluationService) Init(p *common.Position) {
 	hiddenOutputs := e.hiddenOutputs[e.currentHidden][:]
 
 	for i := range hiddenOutputs {
-		hiddenOutputs[i] = e.HiddenBiases[i]
+		hiddenOutputs[i] = e.weights.hiddenBiases[i]
 	}
 
 	for _, i := range input {
 		for j := range hiddenOutputs {
-			hiddenOutputs[j] += e.HiddenWeights[i*HiddenSize+j]
+			hiddenOutputs[j] += e.weights.hiddenWeights[i*HiddenSize+j]
 		}
 	}
 }
 
 func (e *EvaluationService) MakeMove(p *common.Position, m common.Move) {
-	e.updates.Size = 0
+	calculateUpdates(p, m, &e.updates)
 
-	// MakeNullMove
-	if m == common.MoveEmpty {
-		e.updateHidden()
-		return
-	}
+	e.currentHidden += 1
+	var hiddenOutputs = e.hiddenOutputs[e.currentHidden][:]
+	copy(hiddenOutputs, e.hiddenOutputs[e.currentHidden-1][:])
 
-	var from, to, movingPiece, capturedPiece, epCapSq, promotionPt, isCastling = unpackMove(p, m)
-
-	e.updates.Add(calculateNetInputIndex(p.WhiteMove, movingPiece, from), Remove)
-
-	if capturedPiece != common.Empty {
-		var capSq = to
-		if epCapSq != common.SquareNone {
-			capSq = epCapSq
-		}
-		e.updates.Add(calculateNetInputIndex(!p.WhiteMove, capturedPiece, capSq), Remove)
-	}
-
-	var pieceAfterMove = movingPiece
-	if promotionPt != common.Empty {
-		pieceAfterMove = promotionPt
-	}
-	e.updates.Add(calculateNetInputIndex(p.WhiteMove, pieceAfterMove, to), Add)
-
-	if isCastling {
-		var rookRemoveSq, rookAddSq int
-		if p.WhiteMove {
-			if to == common.SquareG1 {
-				rookRemoveSq = common.SquareH1
-				rookAddSq = common.SquareF1
-			} else {
-				rookRemoveSq = common.SquareA1
-				rookAddSq = common.SquareD1
-			}
+	for i := range e.updates.Size {
+		var index = int(e.updates.Indices[i]) * HiddenSize
+		if e.updates.Coeffs[i] == Add {
+			addNEON(hiddenOutputs[:], hiddenOutputs[:], e.weights.hiddenWeights[index:index+HiddenSize])
 		} else {
-			if to == common.SquareG8 {
-				rookRemoveSq = common.SquareH8
-				rookAddSq = common.SquareF8
-			} else {
-				rookRemoveSq = common.SquareA8
-				rookAddSq = common.SquareD8
-			}
+			subNEON(hiddenOutputs[:], hiddenOutputs[:], e.weights.hiddenWeights[index:index+HiddenSize])
 		}
-
-		e.updates.Add(calculateNetInputIndex(p.WhiteMove, common.Rook, rookRemoveSq), Remove)
-		e.updates.Add(calculateNetInputIndex(p.WhiteMove, common.Rook, rookAddSq), Add)
 	}
-
-	e.updateHidden()
 }
 
 func (e *EvaluationService) UnmakeMove() {
@@ -139,73 +102,15 @@ func (e *EvaluationService) EvaluateQuick(p *common.Position) int {
 	return output + 15
 }
 
-/*func (e *EvaluationService) EvaluateProb(p *common.Position) float64 {
+func (e *EvaluationService) EvaluateProb(p *common.Position) float64 {
 	e.Init(p)
-	var output = float64(e.QuickFeed())
+	var output = float64(e.quickFeed())
 	return sigmoid(output)
-}*/
+}
 
 func (e *EvaluationService) quickFeed() float32 {
 	reluNEON(e.hiddenRelu[:], e.hiddenOutputs[e.currentHidden][:])
-	return dotProductNEON(e.hiddenRelu[:], e.OutputWeights[:]) + e.OutputBias
-
-	/*var output float32
-	// zip(hiddenOutputs, e.OutputWeights)
-	for i, x := range e.hiddenOutputs[e.currentHidden][:] {
-		output += max(x, 0) * e.OutputWeights[i]
-	}
-	return output + e.OutputBias()*/
-}
-
-func (e *EvaluationService) updateHidden() {
-	e.currentHidden += 1
-	hiddenOutputs := e.hiddenOutputs[e.currentHidden][:]
-	copy(hiddenOutputs, e.hiddenOutputs[e.currentHidden-1][:])
-
-	for i := 0; i < e.updates.Size; i++ {
-		var index = int(e.updates.Indices[i]) * HiddenSize
-		// zip(hiddenOutputs, e.HiddenWeights)
-		if e.updates.Coeffs[i] == Add {
-			/*for j := range hiddenOutputs {
-				hiddenOutputs[j] += e.HiddenWeights[index+j]
-			}*/
-			addNEON(hiddenOutputs[:], hiddenOutputs[:], e.HiddenWeights[index:index+HiddenSize])
-		} else {
-			/*for j := range hiddenOutputs {
-				hiddenOutputs[j] -= e.HiddenWeights[index+j]
-			}*/
-			subNEON(hiddenOutputs[:], hiddenOutputs[:], e.HiddenWeights[index:index+HiddenSize])
-		}
-	}
-}
-
-func unpackMove(p *common.Position, m common.Move) (from, to, movingPiece, capturedPiece, epCapSq, promotionPt int, isCastling bool) {
-	from = m.From()
-	to = m.To()
-	movingPiece = m.MovingPiece()
-	capturedPiece = m.CapturedPiece()
-	promotionPt = m.Promotion()
-	epCapSq = common.SquareNone
-	if movingPiece == common.King {
-		if p.WhiteMove {
-			if from == common.SquareE1 && (to == common.SquareG1 || to == common.SquareC1) {
-				isCastling = true
-			}
-		} else {
-			if from == common.SquareE8 && (to == common.SquareG8 || to == common.SquareC8) {
-				isCastling = true
-			}
-		}
-	} else if movingPiece == common.Pawn {
-		if to == p.EpSquare {
-			if p.WhiteMove {
-				epCapSq = to - 8
-			} else {
-				epCapSq = to + 8
-			}
-		}
-	}
-	return
+	return dotProductNEON(e.hiddenRelu[:], e.weights.outputWeights[:]) + e.weights.outputBias
 }
 
 func calculateNetInputIndex(whiteSide bool, pieceType, square int) int16 {
