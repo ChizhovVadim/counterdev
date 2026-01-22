@@ -80,9 +80,9 @@ func (e *EvaluationService) MakeMove(p *common.Position, m common.Move) {
 	for i := range e.updates.Size {
 		var index = int(e.updates.Indices[i]) * HiddenSize
 		if e.updates.Coeffs[i] == Add {
-			addNEON(hiddenOutputs[:], hiddenOutputs[:], e.weights.hiddenWeights[index:index+HiddenSize])
+			addNEON(hiddenOutputs, hiddenOutputs, e.weights.hiddenWeights[index:index+HiddenSize])
 		} else {
-			subNEON(hiddenOutputs[:], hiddenOutputs[:], e.weights.hiddenWeights[index:index+HiddenSize])
+			subNEON(hiddenOutputs, hiddenOutputs, e.weights.hiddenWeights[index:index+HiddenSize])
 		}
 	}
 }
