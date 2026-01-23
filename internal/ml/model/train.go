@@ -15,7 +15,7 @@ func Train(
 	netFolderPath string,
 ) error {
 
-	var validationSize = len(samples) / 20
+	var validationSize = min(len(samples)/20, 500_000)
 	var validation = samples[:validationSize]
 	var training = samples[validationSize:]
 

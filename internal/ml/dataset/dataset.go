@@ -63,6 +63,7 @@ func AnalyzeGame(
 	for _, item := range g.Moves {
 		if !(item.IsOpening ||
 			item.Depth < 1 ||
+			item.Score.Mate != 0 ||
 			replay.Position.IsCheck() ||
 			item.Move.CapturedPiece() != common.Empty ||
 			item.Move.Promotion() != common.Empty ||
@@ -115,13 +116,4 @@ func computeSearchTarget(
 		res = 1 - res
 	}
 	return res
-}
-
-func isLowMaterial(p *common.Position) bool {
-	if (p.Pawns|p.Rooks|p.Queens) == 0 &&
-		!common.MoreThanOne(p.Knights|p.Bishops) {
-		return true
-	}
-
-	return false
 }
