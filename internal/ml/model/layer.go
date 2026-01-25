@@ -61,8 +61,8 @@ func (layer *Layer) ForwardFromInput(input Input) {
 	for outputIndex := range layer.outputs {
 		var x = layer.biases.Data[outputIndex]
 		for _, input := range input.Features {
-			var inputIndex = int(input.Index)
-			var inputValue = float64(input.Value)
+			var inputIndex = int(input)
+			const inputValue = 1.0
 			x += layer.weights.Get(outputIndex, inputIndex) * inputValue
 		}
 		var n = &layer.outputs[outputIndex]
@@ -111,8 +111,8 @@ func (layer *Layer) BackwardToInput(input2 Input) {
 		layer.bGradients.Add(outputIndex, 0, x*1)
 
 		for _, input := range input2.Features {
-			var inputIndex = int(input.Index)
-			var inputValue = float64(input.Value)
+			var inputIndex = int(input)
+			const inputValue = 1.0
 			layer.wGradients.Add(outputIndex, inputIndex, x*inputValue)
 		}
 	}

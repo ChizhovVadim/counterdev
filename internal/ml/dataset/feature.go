@@ -15,7 +15,7 @@ func NewFeature768Provider() *Feature768Provider {
 func (p *Feature768Provider) FeatureSize() int { return 768 }
 
 func (p *Feature768Provider) ComputeFeatures(pos *common.Position) model.Input {
-	var input = make([]model.FeatureInfo, 0, common.PopCount(pos.AllPieces()))
+	var input = make([]int16, 0, common.PopCount(pos.AllPieces()))
 	for x := pos.AllPieces(); x != 0; x &= x - 1 {
 		var sq = common.FirstOne(x)
 		var pt, side = pos.GetPieceTypeAndSide(sq)
@@ -27,10 +27,7 @@ func (p *Feature768Provider) ComputeFeatures(pos *common.Position) model.Input {
 		if !(index >= 0 && index < 768) {
 			panic("feature out of range")
 		}
-		input = append(input, model.FeatureInfo{
-			Index: index,
-			Value: 1,
-		})
+		input = append(input, index)
 	}
 	return model.Input{
 		Features: input,
