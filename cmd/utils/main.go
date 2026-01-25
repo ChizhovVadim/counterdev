@@ -10,7 +10,6 @@ func main() {
 	app.AddCommand("arena", matchHandler)
 	app.AddCommand("quality", qualityHandler)
 	app.AddCommand("perft", perftHandler)
-	app.AddCommand("opening", openingHandler)
 	app.AddCommand("dataset", datasetHandler)
 	app.AddCommand("train", trainHandler)
 	var err = app.Run()

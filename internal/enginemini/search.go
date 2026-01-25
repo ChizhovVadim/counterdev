@@ -40,11 +40,11 @@ func (e *Engine) iterativeDeepening() {
 		}
 		e.searchRoot(depth)
 		assertGoodSearchResult(&e.searchResult)
-		//TODO e.timeManager.OnIterationComplete(e.mainLine)
 		if e.progress != nil && e.searchResult.Nodes >= int64(e.ProgressMinNodes) {
 			e.searchResult.Time = time.Since(e.start)
 			e.progress(e.searchResult)
 		}
+		e.timeManager.OnIterationComplete(e.searchResult)
 	}
 }
 
