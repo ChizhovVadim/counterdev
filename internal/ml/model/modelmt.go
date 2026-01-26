@@ -3,6 +3,8 @@ package model
 import (
 	"sync"
 	"sync/atomic"
+
+	"github.com/ChizhovVadim/counterdev/internal/ml"
 )
 
 // модель для многопоточного обучения
@@ -18,7 +20,7 @@ func NewModelMt(model *Model, concurrency int) *ModelMt {
 	return &ModelMt{models: models}
 }
 
-func (m *ModelMt) Train(samples []Sample) {
+func (m *ModelMt) Train(samples []ml.Sample) {
 	var index int32 = -1
 	var wg = &sync.WaitGroup{}
 	for modelIndex := range m.models {
@@ -41,7 +43,7 @@ func (m *ModelMt) Train(samples []Sample) {
 	m.models[0].applyGradients()
 }
 
-func (m *ModelMt) CalculateCost(samples []Sample) float64 {
+func (m *ModelMt) CalculateCost(samples []ml.Sample) float64 {
 	var index int32 = -1
 	var wg = &sync.WaitGroup{}
 	var totalCost float64

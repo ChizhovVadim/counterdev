@@ -7,14 +7,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ChizhovVadim/counterdev/internal/ml"
 	"github.com/ChizhovVadim/counterdev/pkg/common"
 )
 
-func LoadValidationDataset(path string) iter.Seq2[DatasetItem, error] {
-	return func(yield func(DatasetItem, error) bool) {
+func LoadValidationDataset(path string) iter.Seq2[ml.DatasetItem, error] {
+	return func(yield func(ml.DatasetItem, error) bool) {
 		file, err := os.Open(path)
 		if err != nil {
-			if !yield(DatasetItem{}, err) {
+			if !yield(ml.DatasetItem{}, err) {
 				return
 			}
 		}
@@ -31,16 +32,16 @@ func LoadValidationDataset(path string) iter.Seq2[DatasetItem, error] {
 	}
 }
 
-func parseItem(s string) (DatasetItem, error) {
+func parseItem(s string) (ml.DatasetItem, error) {
 	var index = strings.Index(s, "\"")
 	if index < 0 {
-		return DatasetItem{}, fmt.Errorf("zurichessParser failed %v", s)
+		return ml.DatasetItem{}, fmt.Errorf("zurichessParser failed %v", s)
 	}
 
 	var fen = s[:index]
 	var pos, err = common.NewPositionFromFEN(fen)
 	if err != nil {
-		return DatasetItem{}, err
+		return ml.DatasetItem{}, err
 	}
 
 	var strScore = s[index+1:]
@@ -53,7 +54,7 @@ func parseItem(s string) (DatasetItem, error) {
 	} else if strings.HasPrefix(strScore, "0-1") {
 		prob = 0.0
 	} else {
-		return DatasetItem{}, fmt.Errorf("zurichessParser failed %v", s)
+		return ml.DatasetItem{}, fmt.Errorf("zurichessParser failed %v", s)
 	}
-	return DatasetItem{Position: pos, Target: prob}, nil
+	return ml.DatasetItem{Position: pos, Target: prob}, nil
 }

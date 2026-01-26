@@ -1,16 +1,9 @@
 package model
 
-type Input struct {
-	Features []int16
-}
-
-type Sample struct {
-	Input  Input
-	Target float32
-}
+import "github.com/ChizhovVadim/counterdev/internal/ml"
 
 type IModel interface {
-	Train(samples []Sample)
-	CalculateCost(samples []Sample) float64
+	Train(samples []ml.Sample)
+	CalculateCost(samples []ml.Sample) float64
 	SaveWeights(path string) error
 }

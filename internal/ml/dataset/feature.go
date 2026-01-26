@@ -1,7 +1,7 @@
 package dataset
 
 import (
-	"github.com/ChizhovVadim/counterdev/internal/ml/model"
+	"github.com/ChizhovVadim/counterdev/internal/ml"
 	"github.com/ChizhovVadim/counterdev/pkg/common"
 )
 
@@ -14,7 +14,7 @@ func NewFeature768Provider() *Feature768Provider {
 // На самом деле признаков 736, тк пешки не могут быть на крайних горизонталях. Переделать?
 func (p *Feature768Provider) FeatureSize() int { return 768 }
 
-func (p *Feature768Provider) ComputeFeatures(pos *common.Position) model.Input {
+func (p *Feature768Provider) ComputeFeatures(pos *common.Position) ml.Input {
 	var input = make([]int16, 0, common.PopCount(pos.AllPieces()))
 	for x := pos.AllPieces(); x != 0; x &= x - 1 {
 		var sq = common.FirstOne(x)
@@ -29,7 +29,7 @@ func (p *Feature768Provider) ComputeFeatures(pos *common.Position) model.Input {
 		}
 		input = append(input, index)
 	}
-	return model.Input{
+	return ml.Input{
 		Features: input,
 	}
 }

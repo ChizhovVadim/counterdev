@@ -3,29 +3,29 @@ package dataset
 import (
 	"iter"
 
-	"github.com/ChizhovVadim/counterdev/internal/ml/model"
+	"github.com/ChizhovVadim/counterdev/internal/ml"
 	"github.com/ChizhovVadim/counterdev/pkg/common"
 )
 
 type IFeatureProvider interface {
-	ComputeFeatures(pos *common.Position) model.Input
+	ComputeFeatures(pos *common.Position) ml.Input
 	FeatureSize() int
 }
 
 func LoadSamples(
-	dataset iter.Seq2[DatasetItem, error],
+	dataset iter.Seq2[ml.DatasetItem, error],
 	featureProvider IFeatureProvider,
 	mirrorPos bool,
 	maxSize int,
-) ([]model.Sample, error) {
+) ([]ml.Sample, error) {
 	// сразу задаем capacity, чтобы при переалокации не тратить память на 2 вектора.
-	var res = make([]model.Sample, 0, maxSize) //var res []model.Sample
+	var res = make([]ml.Sample, 0, maxSize) //var res []model.Sample
 	for item, err := range dataset {
 		if err != nil {
 			return nil, err
 		}
 		var input = featureProvider.ComputeFeatures(&item.Position)
-		res = append(res, model.Sample{
+		res = append(res, ml.Sample{
 			Input:  input,
 			Target: float32(item.Target),
 		})
@@ -36,7 +36,7 @@ func LoadSamples(
 			var mirrorPos = common.MirrorPosition(&item.Position)
 			var mirrorInput = featureProvider.ComputeFeatures(&mirrorPos)
 			var mirrorTarget = 1 - item.Target
-			res = append(res, model.Sample{
+			res = append(res, ml.Sample{
 				Input:  mirrorInput,
 				Target: float32(mirrorTarget),
 			})

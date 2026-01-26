@@ -1,7 +1,7 @@
 package dataset
 
 import (
-	"github.com/ChizhovVadim/counterdev/internal/ml/model"
+	"github.com/ChizhovVadim/counterdev/internal/ml"
 	"github.com/ChizhovVadim/counterdev/pkg/common"
 )
 
@@ -30,7 +30,7 @@ func (a *EvalToProbabilityAdapter) EvaluateProb(p *common.Position) float64 {
 }
 
 type IModel interface {
-	Forward(input model.Input) float64
+	Forward(input ml.Input) float64
 }
 
 type ModelToProbabilityAdapter struct {

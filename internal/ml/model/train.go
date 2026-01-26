@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/ChizhovVadim/counterdev/internal/ml"
 )
 
 func Train(
-	samples []Sample,
+	samples []ml.Sample,
 	epochs int,
 	netFolderPath string,
 ) error {
@@ -27,7 +29,7 @@ func Train(
 
 func trainCycle(
 	model IModel,
-	validation, training []Sample,
+	validation, training []ml.Sample,
 	epochs int,
 	netFolderPath string,
 ) error {
@@ -59,7 +61,7 @@ func trainCycle(
 	return nil
 }
 
-func shuffle(training []Sample) {
+func shuffle(training []ml.Sample) {
 	rand.Shuffle(len(training), func(i, j int) {
 		training[i], training[j] = training[j], training[i]
 	})

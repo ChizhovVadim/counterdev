@@ -6,6 +6,8 @@ import (
 	"math"
 	"math/rand/v2"
 	"os"
+
+	"github.com/ChizhovVadim/counterdev/internal/ml"
 )
 
 type Model struct {
@@ -99,14 +101,14 @@ func (m *Model) SaveWeights(path string) error {
 	return nil
 }
 
-func (m *Model) Train(samples []Sample) {
+func (m *Model) Train(samples []ml.Sample) {
 	for _, sample := range samples {
 		m.trainSample(sample)
 	}
 	m.applyGradients()
 }
 
-func (m *Model) trainSample(sample Sample) {
+func (m *Model) trainSample(sample ml.Sample) {
 	predicted := m.Forward(sample.Input)
 	m.layer2.outputs[0].Error = m.cost.DerivativeFn(predicted - float64(sample.Target))
 	// back propagation
@@ -124,7 +126,7 @@ func (m *Model) applyGradients() {
 	m.layer2.ApplyGradients()
 }
 
-func (m *Model) CalculateCost(samples []Sample) float64 {
+func (m *Model) CalculateCost(samples []ml.Sample) float64 {
 	var totalCost float64
 	for _, sample := range samples {
 		var predict = m.Forward(sample.Input)
@@ -134,7 +136,7 @@ func (m *Model) CalculateCost(samples []Sample) float64 {
 	return totalCost / float64(len(samples))
 }
 
-func (m *Model) Forward(input Input) float64 {
+func (m *Model) Forward(input ml.Input) float64 {
 	m.layer1.ForwardFromInput(input)
 	m.layer2.Forward(m.layer1.outputs)
 	return m.layer2.outputs[0].Activation

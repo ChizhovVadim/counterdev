@@ -4,6 +4,7 @@ import (
 	"iter"
 	"log"
 
+	"github.com/ChizhovVadim/counterdev/internal/ml"
 	"github.com/ChizhovVadim/counterdev/pkg/common"
 )
 
@@ -14,7 +15,7 @@ type IProbEvaluator interface {
 
 func CheckEvalQuality(
 	e IProbEvaluator,
-	dataset iter.Seq2[DatasetItem, error],
+	dataset iter.Seq2[ml.DatasetItem, error],
 ) error {
 	var totalCost float64
 	var count int

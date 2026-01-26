@@ -1,6 +1,10 @@
 package model
 
-import "math/rand/v2"
+import (
+	"math/rand/v2"
+
+	"github.com/ChizhovVadim/counterdev/internal/ml"
+)
 
 type Neuron struct {
 	Activation float64
@@ -57,7 +61,7 @@ func (layer *Layer) InitWeightsReLU(rnd *rand.Rand) {
 	initUniform(rnd, layer.weights.Data, variance)
 }
 
-func (layer *Layer) ForwardFromInput(input Input) {
+func (layer *Layer) ForwardFromInput(input ml.Input) {
 	for outputIndex := range layer.outputs {
 		var x = layer.biases.Data[outputIndex]
 		for _, input := range input.Features {
@@ -92,19 +96,16 @@ func (layer *Layer) Backward(input1 []Neuron) {
 		var n = &layer.outputs[outputIndex]
 		var x = n.Error * n.Prime
 
-		for inputIndex := range input1 {
-			input1[inputIndex].Error += layer.weights.Get(outputIndex, inputIndex) * x
-		}
-
 		layer.bGradients.Add(outputIndex, 0, x*1)
 		for inputIndex := range input1 {
+			input1[inputIndex].Error += layer.weights.Get(outputIndex, inputIndex) * x
 			var inputValue = input1[inputIndex].Activation
 			layer.wGradients.Add(outputIndex, inputIndex, x*inputValue)
 		}
 	}
 }
 
-func (layer *Layer) BackwardToInput(input2 Input) {
+func (layer *Layer) BackwardToInput(input2 ml.Input) {
 	for outputIndex := range layer.outputs {
 		var n = &layer.outputs[outputIndex]
 		var x = n.Error * n.Prime
