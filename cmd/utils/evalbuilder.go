@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/ChizhovVadim/counterdev/internal/evalmaterial"
+	"github.com/ChizhovVadim/counterdev/internal/evalpesto"
 	"github.com/ChizhovVadim/counterdev/internal/evalweiss"
 	"github.com/ChizhovVadim/counterdev/pkg/common"
 	"github.com/ChizhovVadim/counterdev/pkg/evalnn"
@@ -18,6 +19,9 @@ var networkWeightsExp2 = weightsLoader("~/chess/net/2026-01-09_03_55/n-10-1052.n
 func buildEvaluator(key string) common.IEvaluator {
 	if key == "material" {
 		return evalmaterial.NewEvaluationService()
+	}
+	if key == "pesto" {
+		return evalpesto.NewEvaluationService()
 	}
 	if key == "" || key == "weiss" {
 		return evalweiss.NewEvaluationService()
