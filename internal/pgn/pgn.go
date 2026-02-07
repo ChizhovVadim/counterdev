@@ -204,6 +204,9 @@ func parseComment(comment string) Comment {
 		return Comment{IsOpening: true}
 	}
 	var fields = strings.Fields(comment)
+	if len(fields) == 0 {
+		return Comment{}
+	}
 	var s string
 	if len(fields) > 1 && strings.HasPrefix(fields[0], "(") {
 		s = fields[1]
