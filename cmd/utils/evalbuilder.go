@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/ChizhovVadim/counterdev/internal/evalmaterial"
+	"github.com/ChizhovVadim/counterdev/internal/evalmix"
 	"github.com/ChizhovVadim/counterdev/internal/evalpesto"
 	"github.com/ChizhovVadim/counterdev/internal/evalweiss"
 	"github.com/ChizhovVadim/counterdev/pkg/common"
@@ -31,6 +32,9 @@ func buildEvaluator(key string) common.IEvaluator {
 	}
 	if key == "nnue2" {
 		return evalnn.NewEvaluationService(networkWeightsExp2(), 146)
+	}
+	if key == "mix" {
+		return evalmix.NewEvaluationService(buildEvaluator("pesto"), buildEvaluator("nnue"))
 	}
 	panic(fmt.Errorf("bad eval key %v", key))
 }
