@@ -1,6 +1,8 @@
 package dataset
 
 import (
+	"context"
+
 	"github.com/ChizhovVadim/counterdev/internal/ml"
 	"github.com/ChizhovVadim/counterdev/pkg/common"
 )
@@ -52,4 +54,28 @@ func (a *ModelToProbabilityAdapter) EvaluateProb(p *common.Position) float64 {
 	var input = a.featureProvider.ComputeFeatures(p)
 	var output = a.model.Forward(input)
 	return output
+}
+
+type EngineToProbabilityAdapter struct {
+	engine       common.IEngine
+	sigmoidScale float64
+}
+
+func ProbEvaluatorFromEngine(
+	engine common.IEngine,
+	sigmoidScale float64,
+) *EngineToProbabilityAdapter {
+	return &EngineToProbabilityAdapter{
+		engine:       engine,
+		sigmoidScale: sigmoidScale,
+	}
+}
+
+func (a *EngineToProbabilityAdapter) EvaluateProb(p *common.Position) float64 {
+	var res = a.engine.Search(context.Background(), common.SearchParams{
+		Position: *p,
+		Repeats:  map[uint64]int{p.Key: 1},
+		Limits:   common.LimitsType{Depth: 8},
+	})
+	return computeSearchTarget(a.sigmoidScale, res.Score, p.WhiteMove)
 }
